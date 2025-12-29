@@ -2,7 +2,7 @@ name: UT & E2E (Label Driven)
 
 on:
   push:
-    branches: ["main"]
+    branches: ["test_ut"]
   pull_request:
     branches: ["main"]
     types: [opened, synchronize, labeled]
