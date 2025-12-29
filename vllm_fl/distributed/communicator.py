@@ -5,6 +5,7 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
 from typing import Optional, Union
+
 import torch
 from torch.distributed import ProcessGroup
 from vllm.distributed.device_communicators.base_device_communicator import (

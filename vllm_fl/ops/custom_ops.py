@@ -3,9 +3,9 @@
 from vllm.model_executor.custom_op import CustomOp
 
 from .activation import *
+from .fused_moe import *
 from .layernorm import *
 from .rotary_embedding import *
-from .fused_moe import *
 
 
 def register_oot_ops():
@@ -13,4 +13,6 @@ def register_oot_ops():
     CustomOp.register_oot(_decorated_op_cls=RMSNormFL, name="RMSNorm")
     CustomOp.register_oot(_decorated_op_cls=RotaryEmbeddingFL, name="RotaryEmbedding")
     CustomOp.register_oot(_decorated_op_cls=FusedMoEFL, name="FusedMoE")
-    CustomOp.register_oot(_decorated_op_cls=UnquantizedFusedMoEMethodFL, name="UnquantizedFusedMoEMethod")
+    CustomOp.register_oot(
+        _decorated_op_cls=UnquantizedFusedMoEMethodFL, name="UnquantizedFusedMoEMethod"
+    )

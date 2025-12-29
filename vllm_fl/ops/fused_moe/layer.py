@@ -5,38 +5,43 @@
 # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
 from typing import Callable, Literal, Optional, Union
+
 import torch
 import torch.nn.functional as F
 import vllm.envs as envs
 from vllm.model_executor.layers.fused_moe import FusedMoE
-from vllm.model_executor.layers.fused_moe.layer import UnquantizedFusedMoEMethod
-from vllm.model_executor.layers.fused_moe.routing_simulator import (
-    RoutingSimulator)
 from vllm.model_executor.layers.fused_moe.fused_moe import grouped_topk
+from vllm.model_executor.layers.fused_moe.layer import UnquantizedFusedMoEMethod
+from vllm.model_executor.layers.fused_moe.routing_simulator import RoutingSimulator
 from vllm.platforms import current_platform
 
 if current_platform.is_cuda_alike():
-    from vllm.model_executor.layers.fused_moe.fused_moe import eplb_map_to_physical_and_record
+    from vllm.model_executor.layers.fused_moe.fused_moe import (
+        eplb_map_to_physical_and_record,
+    )
 else:
+
     def _eplb_map_to_physical_and_record(
-            topk_ids: torch.Tensor, expert_load_view: torch.Tensor,
-            logical_to_physical_map: torch.Tensor,
-            logical_replica_count: torch.Tensor,
-            indices_type: Optional[torch.dtype]) -> torch.Tensor:
+        topk_ids: torch.Tensor,
+        expert_load_view: torch.Tensor,
+        logical_to_physical_map: torch.Tensor,
+        logical_replica_count: torch.Tensor,
+        indices_type: Optional[torch.dtype],
+    ) -> torch.Tensor:
         # CPU fallback: no EPLB so just return as is
         return topk_ids
 
     eplb_map_to_physical_and_record = _eplb_map_to_physical_and_record
 
-from vllm.model_executor.layers.fused_moe.fused_moe import (
-    zero_experts_compute_triton)
-
+from vllm.model_executor.layers.fused_moe.fused_moe import zero_experts_compute_triton
 
 from vllm_fl.ops.fused_moe.fused_moe import fused_experts
 
+
 class UnquantizedFusedMoEMethodFL(UnquantizedFusedMoEMethod):
 
-    def forward_oot(self,
+    def forward_oot(
+        self,
         layer: torch.nn.Module,
         x: torch.Tensor,
         use_grouped_topk: bool,
@@ -58,8 +63,8 @@ class UnquantizedFusedMoEMethodFL(UnquantizedFusedMoEMethod):
         logical_to_physical_map: Optional[torch.Tensor] = None,
         logical_replica_count: Optional[torch.Tensor] = None,
     ) -> Union[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
-        zero_expert_num = getattr(layer, 'zero_expert_num', 0)
-        zero_expert_type = getattr(layer, 'zero_expert_type', None)
+        zero_expert_num = getattr(layer, "zero_expert_num", 0)
+        zero_expert_type = getattr(layer, "zero_expert_type", None)
         topk_weights, topk_ids, zero_expert_result = FusedMoEFL.select_experts(
             hidden_states=x,
             router_logits=router_logits,
@@ -80,51 +85,61 @@ class UnquantizedFusedMoEMethodFL(UnquantizedFusedMoEMethod):
             logical_replica_count=logical_replica_count,
             global_num_experts=global_num_experts,
             zero_expert_num=zero_expert_num,
-            zero_expert_type=zero_expert_type)
-        
+            zero_expert_type=zero_expert_type,
+        )
+
         result = fused_experts(
-                hidden_states=x,
-                w1=layer.w13_weight,
-                w2=layer.w2_weight,
-                topk_weights=topk_weights,
-                topk_ids=topk_ids,
-                activation=activation,
-                quant_config=self.moe_quant_config,
-                apply_router_weight_on_input=apply_router_weight_on_input,
-                global_num_experts=global_num_experts,
-                expert_map=expert_map,
-            )
+            hidden_states=x,
+            w1=layer.w13_weight,
+            w2=layer.w2_weight,
+            topk_weights=topk_weights,
+            topk_ids=topk_ids,
+            activation=activation,
+            quant_config=self.moe_quant_config,
+            apply_router_weight_on_input=apply_router_weight_on_input,
+            global_num_experts=global_num_experts,
+            expert_map=expert_map,
+        )
 
         if zero_expert_num != 0 and zero_expert_type is not None:
-            assert not isinstance(result, tuple), \
-                "Shared + zero experts are mutually exclusive not yet supported"
+            assert not isinstance(
+                result, tuple
+            ), "Shared + zero experts are mutually exclusive not yet supported"
             return result, zero_expert_result
         else:
             return result
+
     forward_native = forward_oot
-        
+
 
 class FusedMoEFL(FusedMoE):
-    def forward_oot(self,
+    def forward_oot(
+        self,
         hidden_states: torch.Tensor,
         router_logits: torch.Tensor,
     ) -> Union[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
         og_hidden_states = hidden_states.shape[-1]
         if self.hidden_size != og_hidden_states:
-            hidden_states = F.pad(hidden_states,
-                                  (0, self.hidden_size - og_hidden_states),
-                                  mode='constant',
-                                  value=0.0)
-            
+            hidden_states = F.pad(
+                hidden_states,
+                (0, self.hidden_size - og_hidden_states),
+                mode="constant",
+                value=0.0,
+            )
+
         if self.shared_experts is None:
             fused_output = torch.ops.vllm.moe_forward(
-                hidden_states, router_logits, self.layer_name)
+                hidden_states, router_logits, self.layer_name
+            )
             return fused_output[..., :og_hidden_states]
         else:
             shared_output, fused_output = torch.ops.vllm.moe_forward_shared(
-                hidden_states, router_logits, self.layer_name)
-            return (shared_output[..., :og_hidden_states],
-                    fused_output[..., :og_hidden_states])
+                hidden_states, router_logits, self.layer_name
+            )
+            return (
+                shared_output[..., :og_hidden_states],
+                fused_output[..., :og_hidden_states],
+            )
 
     @staticmethod
     def select_experts(
@@ -154,7 +169,7 @@ class FusedMoEFL(FusedMoE):
         router logits.
 
         Returns:
-                (topk_weights, topk_ids, zero_expert_result) 
+                (topk_weights, topk_ids, zero_expert_result)
                 (tuple[torch.Tensor, torch.Tensor, torch.Tensor]):
                 The weights, expert ids, and zero expert computation result.
 
@@ -162,8 +177,10 @@ class FusedMoEFL(FusedMoE):
             equivalent to global logical ids, so should be compatible with
             plain MoE implementations without redundant experts.
         """
-        from vllm_fl.ops.fused_moe.fused_moe import fused_topk
         from vllm.model_executor.layers.fused_moe.fused_moe import fused_topk_bias
+
+        from vllm_fl.ops.fused_moe.fused_moe import fused_topk
+
         # Check if we should use a routing simulation strategy
         routing_strategy = envs.VLLM_MOE_ROUTING_SIMULATION_STRATEGY
         if routing_strategy != "":
@@ -172,7 +189,8 @@ class FusedMoEFL(FusedMoE):
                 router_logits=router_logits,
                 strategy_name=routing_strategy,
                 top_k=top_k,
-                indices_type=indices_type)
+                indices_type=indices_type,
+            )
 
         # DeepSeekv2 uses grouped_top_k
         if use_grouped_topk:
@@ -187,7 +205,8 @@ class FusedMoEFL(FusedMoE):
                 topk_group=topk_group,
                 scoring_func=scoring_func,
                 routed_scaling_factor=routed_scaling_factor,
-                e_score_correction_bias=e_score_correction_bias)
+                e_score_correction_bias=e_score_correction_bias,
+            )
             if indices_type is not None:
                 topk_ids = topk_ids.to(dtype=indices_type)
         elif e_score_correction_bias is not None:
@@ -213,7 +232,8 @@ class FusedMoEFL(FusedMoE):
                 hidden_states=hidden_states,
                 gating_output=router_logits,
                 topk=top_k,
-                renormalize=renormalize)
+                renormalize=renormalize,
+            )
             if indices_type is not None:
                 topk_ids = topk_ids.to(dtype=indices_type)
 
@@ -233,9 +253,12 @@ class FusedMoEFL(FusedMoE):
         assert topk_ids.dtype == indices_type or indices_type is None
 
         # Compute zero expert result if needed
-        if (zero_expert_num is not None and zero_expert_num > 0
-                and zero_expert_type is not None
-                and global_num_experts is not None):
+        if (
+            zero_expert_num is not None
+            and zero_expert_num > 0
+            and zero_expert_type is not None
+            and global_num_experts is not None
+        ):
             zero_expert_result = zero_experts_compute_triton(
                 expert_indices=topk_ids,
                 expert_scales=topk_weights,
