@@ -60,7 +60,13 @@ jobs:
     if: |
       needs.lint.result == 'success' &&
       needs.changes.outputs.ut_changed == 'true' &&
-      contains(github.event.pull_request.labels.*.name, 'ut')
+      (
+        github.event_name == 'push' ||
+        (
+          github.event_name == 'pull_request' &&
+          contains(github.event.pull_request.labels.*.name, 'ut')
+        )
+      )
     runs-on: [self-hosted, Linux, X64, nvidia-0, gpus-8]
     steps:
       - uses: actions/checkout@v4
@@ -83,8 +89,14 @@ jobs:
     needs: [lint, changes]
     if: |
       needs.lint.result == 'success' &&
-      needs.changes.outputs.e2e_changed == 'true' &&
-      contains(github.event.pull_request.labels.*.name, 'e2e')
+      needs.changes.outputs.ut_changed == 'true' &&
+      (
+        github.event_name == 'push' ||
+        (
+          github.event_name == 'pull_request' &&
+          contains(github.event.pull_request.labels.*.name, 'ut')
+        )
+      )
     runs-on: [self-hosted, Linux, X64, nvidia-0, gpus-8]
     timeout-minutes: 90
     steps:
