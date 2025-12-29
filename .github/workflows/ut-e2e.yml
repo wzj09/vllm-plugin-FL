@@ -75,6 +75,7 @@ jobs:
         run: |
           docker run --rm \
             -u $(id -u):$(id -g) \
+            -e HOME=/workspace \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             localhost:5000/vllm-plugin-fl:ci \
@@ -107,6 +108,7 @@ jobs:
         run: |
           docker run --rm \
             -u $(id -u):$(id -g) \
+            -e HOME=/workspace \
             -v ${{ github.workspace }}:/workspace \
             -v /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
             -w /workspace \
