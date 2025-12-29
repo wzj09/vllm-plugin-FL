@@ -1,3 +1,12 @@
+# Copyright (c) 2025 BAAI. All rights reserved.
+# Adapted from https://github.com/vllm-project/vllm/blob/v0.11.0/vllm/platforms/cuda.py
+# Below is the original copyright:
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
+import os
+from datetime import timedelta
+from functools import cache, wraps
 from typing import TYPE_CHECKING, Optional
 
 import torch
@@ -175,6 +184,7 @@ class PlatformFL(Platform):
     def get_device_communicator_cls(cls) -> str:
         return "vllm_fl.distributed.communicator.CommunicatorFL"  # noqa
 
+    
     @classmethod
     def get_static_graph_wrapper_cls(cls) -> str:
         return "vllm_fl.compilation.graph.GraphWrapper"
@@ -186,7 +196,7 @@ class PlatformFL(Platform):
     ### TODO(lms): support hybrid kv cache
     @classmethod
     def support_hybrid_kv_cache(cls) -> bool:
-        return False
+        return True
 
     ### NOTE(lms): will effect compile result
     @classmethod

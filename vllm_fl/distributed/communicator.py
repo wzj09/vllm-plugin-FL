@@ -1,5 +1,10 @@
-from typing import Optional, Union
+# Copyright (c) 2025 BAAI. All rights reserved.
+# Adapted from https://github.com/vllm-project/vllm/blob/v0.11.0/vllm/distributed/device_communicators/cuda_communicator.py
+# Below is the original copyright:
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
+from typing import Optional, Union
 import torch
 from torch.distributed import ProcessGroup
 from vllm.distributed.device_communicators.base_device_communicator import (
