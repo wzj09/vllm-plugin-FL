@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   lint:
-    runs-on: [self-hosted, Linux, X64, nvidia-0, gpus-8]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -31,7 +31,7 @@ jobs:
           pre-commit run --all-files
 
   changes:
-    runs-on: [self-hosted, Linux, X64, nvidia-0, gpus-8]
+    runs-on: ubuntu-latest
     outputs:
       ut_changed: ${{ steps.filter.outputs.ut }}
       e2e_changed: ${{ steps.filter.outputs.e2e }}
