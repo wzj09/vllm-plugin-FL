@@ -2,8 +2,8 @@ examples:
   - 'examples/**'
 
 tests:
-  - 'tests/e2e'
-  - 'tests/ut'
+  - 'tests/e2e**'
+  - 'tests/ut**'
 
 core:
   - 'vllm_fl/**'
