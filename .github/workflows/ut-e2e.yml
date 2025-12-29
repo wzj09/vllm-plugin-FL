@@ -81,6 +81,7 @@ jobs:
             localhost:5000/vllm-plugin-fl:ci \
             bash -c "
               set -e &&
+              pip install pytest
               pip install -r requirements.txt &&
               pip install --no-build-isolation -e . &&
               pytest tests/ut
@@ -115,6 +116,7 @@ jobs:
             localhost:5000/vllm-plugin-fl:ci \
             bash -c "
               set -e &&
+              pip install pytest
               pip install -r requirements.txt &&
               pip install --no-build-isolation -e . &&
               pytest tests/e2e
