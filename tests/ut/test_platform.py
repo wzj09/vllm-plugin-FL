@@ -69,5 +69,5 @@ class TestPlatformFLCUDA:
 
     def test_support_flags(self):
         assert PlatformFL.support_static_graph_mode() is True
-        assert PlatformFL.support_hybrid_kv_cache() is False
+        assert PlatformFL.support_hybrid_kv_cache() is True
         assert PlatformFL.opaque_attention_op() is True
