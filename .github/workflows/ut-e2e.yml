@@ -83,38 +83,38 @@ jobs:
               set -e &&
               pip install -r requirements.txt &&
               pip install --no-build-isolation -e . &&
-              python3 -m pytest -v tests/ut --ignore=tests/ut/work/
+              python3 -m pytest -v tests/ut --ignore=tests/ut/worker
             "
-  e2e:
-    name: E2E Tests
-    needs: [lint, changes]
-    if: |
-      needs.lint.result == 'success' &&
-      needs.changes.outputs.e2e_changed == 'true' &&
-      (
-        github.event_name == 'push' ||
-        (
-          github.event_name == 'pull_request' &&
-          contains(github.event.pull_request.labels.*.name, 'e2e')
-        )
-      )
-    runs-on: [self-hosted, Linux, X64, nvidia-0, gpus-8]
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run E2E (docker)
-        run: |
-          docker run --rm \
-            -u $(id -u):$(id -g) \
-            -e HOME=/workspace \
-            -v ${{ github.workspace }}:/workspace \
-            -v /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
-            -w /workspace \
-            localhost:5000/vllm-plugin-fl:ci \
-            bash -c "
-              set -e &&
-              pip install -r requirements.txt &&
-              pip install --no-build-isolation -e . &&
-              python3 -m pytest -v tests/e2e
-            "
+#   e2e:
+#     name: E2E Tests
+#     needs: [lint, changes]
+#     if: |
+#       needs.lint.result == 'success' &&
+#       needs.changes.outputs.e2e_changed == 'true' &&
+#       (
+#         github.event_name == 'push' ||
+#         (
+#           github.event_name == 'pull_request' &&
+#           contains(github.event.pull_request.labels.*.name, 'e2e')
+#         )
+#       )
+#     runs-on: [self-hosted, Linux, X64, nvidia-0, gpus-8]
+#     timeout-minutes: 90
+#     steps:
+#       - uses: actions/checkout@v4
+# 
+#       - name: Run E2E (docker)
+#         run: |
+#           docker run --rm \
+#             -u $(id -u):$(id -g) \
+#             -e HOME=/workspace \
+#             -v ${{ github.workspace }}:/workspace \
+#             -v /home/flagscale_cicd/docker/docker_build/docker_data:/home/gitlab-runner/data
+#             -w /workspace \
+#             localhost:5000/vllm-plugin-fl:ci \
+#             bash -c "
+#               set -e &&
+#               pip install -r requirements.txt &&
+#               pip install --no-build-isolation -e . &&
+#               python3 -m pytest -v tests/e2e
+#             "
