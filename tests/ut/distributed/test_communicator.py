@@ -1,17 +1,21 @@
 import sys
 from unittest.mock import MagicMock, patch
+
 import pytest
 import torch
 
 mock_logger_module = MagicMock()
 mock_logger_module.get_logger = MagicMock()
-sys.modules['vllm.logger'] = mock_logger_module
+sys.modules["vllm.logger"] = mock_logger_module
 
-with patch.dict('sys.modules', {
-    'plugin': MagicMock(),
-    'plugin.interservice': MagicMock(),
-    'plugin.interservice.flagcx_wrapper': MagicMock()
-}):
+with patch.dict(
+    "sys.modules",
+    {
+        "plugin": MagicMock(),
+        "plugin.interservice": MagicMock(),
+        "plugin.interservice.flagcx_wrapper": MagicMock(),
+    },
+):
     from vllm_fl.distributed.communicator import CommunicatorFL
 
     class TestCommunicatorFL(CommunicatorFL):
@@ -27,9 +31,15 @@ with patch.dict('sys.modules', {
 
             self.all_reduce = MagicMock(side_effect=lambda x: x.clone())
             self.reduce_scatter = MagicMock(side_effect=lambda x, dim=-1: x[:1])
-            self.reduce_scatterv = MagicMock(side_effect=lambda x, dim=-1, sizes=None: x[:1])
+            self.reduce_scatterv = MagicMock(
+                side_effect=lambda x, dim=-1, sizes=None: x[:1]
+            )
             self.send = MagicMock()
-            self.recv = MagicMock(side_effect=lambda size, dtype, src=None: torch.zeros(size, dtype=dtype, device="cuda"))
+            self.recv = MagicMock(
+                side_effect=lambda size, dtype, src=None: torch.zeros(
+                    size, dtype=dtype, device="cuda"
+                )
+            )
             self.destroy = MagicMock()
             self.dispatch = MagicMock(side_effect=lambda h, l, is_seq=False: (h, l))
             self.combine = MagicMock(side_effect=lambda h, is_seq=False: h)
@@ -51,7 +61,7 @@ with patch.dict('sys.modules', {
 
     def test_reduce_scatterv(communicator):
         x = torch.arange(4.0, device="cuda")
-        result = communicator.reduce_scatterv(x, sizes=[2,2])
+        result = communicator.reduce_scatterv(x, sizes=[2, 2])
         assert result.numel() == 1
 
     def test_send_recv(communicator):
@@ -67,4 +77,3 @@ with patch.dict('sys.modules', {
         assert torch.equal(l_out, l)
         h2 = communicator.combine(h)
         assert torch.equal(h2, h)
-
