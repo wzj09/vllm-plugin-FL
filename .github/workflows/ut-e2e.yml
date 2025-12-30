@@ -85,7 +85,6 @@ jobs:
               pip install --no-build-isolation -e . &&
               python3 -m pytest -v tests/ut --ignore=tests/ut/work/
             "
-: <<'COMMENT'
   e2e:
     name: E2E Tests
     needs: [lint, changes]
@@ -119,4 +118,3 @@ jobs:
               pip install --no-build-isolation -e . &&
               python3 -m pytest -v tests/e2e
             "
-COMMENT
